@@ -161,7 +161,7 @@ streznik.get('/izpisiRacun/:oblika', function(zahteva, odgovor) {
         zato računa ni mogoče pripraviti!</p>");
     } else {
       if(zahteva.session.CustomerId == '' || !zahteva.session.CustomerId){
-        odgovor.send("<p>Izberite kupca</p>")
+        odgovor.send("<p>Niste prijavljeni. Izberite stranko na katero naj se glasi račun</p>")
       }else{
         vrniStranko(zahteva.session.CustomerId, function(napaka, stranka){
           if(!stranka || stranka.length == 0 || napaka){

@@ -186,11 +186,22 @@ streznik.get('/izpisiRacun/:oblika', function(zahteva, odgovor) {
       odgovor.send("<p>V košarici nimate nobene pesmi, \
         zato računa ni mogoče pripraviti!</p>");
     } else {
-      odgovor.setHeader('content-type', 'text/xml');
-      odgovor.render('eslog', {
-        vizualiziraj: zahteva.params.oblika == 'html' ? true : false,
-        postavkeRacuna: pesmi
-      })  
+      if(zahteva.session.CustomerId == '' || !zahteva.session.CustomerId){
+        odgovor.send("<p>Niste prijavljeni. Izberite stranko na katero naj se glasi račun</p>")
+      }else{
+        vrniStranko(zahteva.session.CustomerId, function(napaka, stranka){
+          if(!stranka || stranka.length == 0 || napaka){
+            odgovor.sendStatus(500);
+          }else{
+            odgovor.setHeader('content-type', 'text/xml');
+            odgovor.render('eslog', {
+              vizualiziraj: zahteva.params.oblika == 'html' ? true : false,
+              postavkeRacuna: pesmi,
+              narocnik: stranka[0]
+            })
+          };
+        })
+      }
     }
   })
 })
@@ -203,6 +214,15 @@ streznik.get('/izpisiRacun', function(zahteva, odgovor) {
 // Vrni stranke iz podatkovne baze
 var vrniStranke = function(callback) {
   pb.all("SELECT * FROM Customer",
+    function(napaka, vrstice) {
+      callback(napaka, vrstice);
+    }
+  );
+}
+
+// Vrni stranko iz podatkovne baze
+var vrniStranko = function(CustomerId, callback) {
+  pb.all("SELECT * FROM Customer WHERE Customer.CustomerId = " + CustomerId,
     function(napaka, vrstice) {
       callback(napaka, vrstice);
     }
@@ -272,14 +292,16 @@ streznik.post('/stranka', function(zahteva, odgovor) {
   
   form.parse(zahteva, function (napaka1, polja, datoteke) {
     zahteva.session.CustomerSelected = true;
+    zahteva.session.CustomerId = polja.seznamStrank;
     odgovor.redirect('/')
   });
 })
 
 // Odjava stranke
 streznik.post('/odjava', function(zahteva, odgovor) {
-    zahteva.session.CustomerSelected = false;
-    odgovor.redirect('/prijava') 
+  zahteva.session.CustomerSelected = false;
+  zahteva.session.CustomerId = '';
+  odgovor.redirect('/prijava'); 
 })
 
 

@@ -163,9 +163,8 @@ streznik.get('/izpisiRacun/:oblika', function(zahteva, odgovor) {
       if(zahteva.session.CustomerId == '' || !zahteva.session.CustomerId){
         odgovor.send("<p>Izberite kupca</p>")
       }else{
-      
-        vrniStranko(zahteva.session.CustomerId, function(stranka){
-          if(stranka.length == 0 || !stranka){
+        vrniStranko(zahteva.session.CustomerId, function(napaka, stranka){
+          if(!stranka || stranka.length == 0 || napaka){
             odgovor.sendStatus(500);
           }else{
             odgovor.setHeader('content-type', 'text/xml');
@@ -197,7 +196,7 @@ var vrniStranke = function(callback) {
 
 // Vrni stranko iz podatkovne baze
 var vrniStranko = function(CustomerId, callback) {
-  pb.all("SELECT * FROM Customer WHERE Customer.Id = " + CustomerId,
+  pb.all("SELECT * FROM Customer WHERE Customer.CustomerId = " + CustomerId,
     function(napaka, vrstice) {
       callback(napaka, vrstice);
     }
@@ -261,7 +260,8 @@ streznik.post('/stranka', function(zahteva, odgovor) {
 
 // Odjava stranke
 streznik.post('/odjava', function(zahteva, odgovor) {
-    odgovor.redirect('/prijava') 
+  zahteva.session.CustomerId = '';
+  odgovor.redirect('/prijava') 
 })
 
 
